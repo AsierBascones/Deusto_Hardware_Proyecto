@@ -104,8 +104,7 @@ static int obtener_id_ciudad(sqlite3 *db, const char *nombreCiudad) {
     return idCiudad;
 }
 
-static void comando_login(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos,
-                          char *respuesta, int tamRespuesta) {
+static void comando_login(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos, char *respuesta, int tamRespuesta) {
     sqlite3_stmt *stmt = NULL;
     const char *sql = "SELECT id_usuario, rol FROM USUARIO WHERE email = ? AND contrasena = ?";
 
@@ -136,13 +135,9 @@ static void comando_login(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int n
     sqlite3_finalize(stmt);
 }
 
-static void comando_registrar_admin(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos,
-                                    char *respuesta, int tamRespuesta) {
+static void comando_registrar_admin(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos, char *respuesta, int tamRespuesta) {
     sqlite3_stmt *stmt = NULL;
-
-    const char *sql =
-        "INSERT INTO USUARIO (nombre, apellidos, email, contrasena, rol, id_ciudad) "
-        "VALUES (?, ?, ?, ?, 'ADMIN', 1)";
+    const char *sql = "INSERT INTO USUARIO (nombre, apellidos, email, contrasena, rol, id_ciudad) VALUES (?, ?, ?, ?, 'ADMIN', 1)";
 
     if (numCampos != 5) {
         responder(respuesta, tamRespuesta, "ERR", "Formato incorrecto. Uso: 02|nombre|apellidos|email|contrasena");
@@ -168,14 +163,10 @@ static void comando_registrar_admin(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAM
     sqlite3_finalize(stmt);
 }
 
-static void comando_registrar_cliente(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos,
-                                      char *respuesta, int tamRespuesta) {
+static void comando_registrar_cliente(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos, char *respuesta, int tamRespuesta) {
     sqlite3_stmt *stmt = NULL;
     int idCiudad;
-
-    const char *sql =
-        "INSERT INTO USUARIO (nombre, apellidos, email, contrasena, rol, id_ciudad) "
-        "VALUES (?, ?, ?, ?, 'CLIENTE', ?)";
+    const char *sql = "INSERT INTO USUARIO (nombre, apellidos, email, contrasena, rol, id_ciudad) VALUES (?, ?, ?, ?, 'CLIENTE', ?)";
 
     if (numCampos != 8) {
         responder(respuesta, tamRespuesta, "ERR", "Formato incorrecto. Uso: 03|nombre|apellidos|email|contrasena|telefono|direccion|ciudad");
@@ -207,7 +198,6 @@ static void comando_registrar_cliente(sqlite3 *db, char campos[MAX_CAMPOS][TAM_C
 static void comando_ver_catalogo(sqlite3 *db, char *respuesta, int tamRespuesta) {
     sqlite3_stmt *stmt = NULL;
     int primero = 1;
-
     const char *sql =
         "SELECT P.id_producto, P.nombre, P.marca, P.precio, P.stock, COALESCE(C.nombre, '') "
         "FROM PRODUCTO P "
@@ -265,8 +255,7 @@ static int obtener_precio_stock(sqlite3 *db, int idProducto, double *precio, int
     return encontrado;
 }
 
-static void comando_confirmar_compra(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos,
-                                     char *respuesta, int tamRespuesta) {
+static void comando_confirmar_compra(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos, char *respuesta, int tamRespuesta) {
     sqlite3_stmt *stmt = NULL;
     char carrito[TAM_CAMPO];
     char *linea;
@@ -322,11 +311,7 @@ static void comando_confirmar_compra(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CA
 
     sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, NULL);
 
-    if (sqlite3_prepare_v2(db,
-        "INSERT INTO CARRITO (fecha_creacion, estado_compra, id_usuario) "
-        "VALUES (DATE('now'), 'CONFIRMADO', ?)",
-        -1, &stmt, NULL) != SQLITE_OK) {
-
+    if (sqlite3_prepare_v2(db, "INSERT INTO CARRITO (fecha_creacion, estado_compra, id_usuario) VALUES (DATE('now'), 'CONFIRMADO', ?)", -1, &stmt, NULL) != SQLITE_OK) {
         sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
         responder_bd_error(db, respuesta, tamRespuesta);
         return;
@@ -360,11 +345,7 @@ static void comando_confirmar_compra(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CA
         sscanf(linea, "%d,%d", &idProducto, &cantidad);
         obtener_precio_stock(db, idProducto, &precio, &stock);
 
-        if (sqlite3_prepare_v2(db,
-            "INSERT INTO LINEA_CARRITO (id_carrito, id_producto, cantidad, precio_unitario) "
-            "VALUES (?, ?, ?, ?)",
-            -1, &stmt, NULL) != SQLITE_OK) {
-
+        if (sqlite3_prepare_v2(db, "INSERT INTO LINEA_CARRITO (id_carrito, id_producto, cantidad, precio_unitario) VALUES (?, ?, ?, ?)", -1, &stmt, NULL) != SQLITE_OK) {
             sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
             responder_bd_error(db, respuesta, tamRespuesta);
             return;
@@ -385,10 +366,7 @@ static void comando_confirmar_compra(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CA
         sqlite3_finalize(stmt);
         stmt = NULL;
 
-        if (sqlite3_prepare_v2(db,
-            "UPDATE PRODUCTO SET stock = stock - ? WHERE id_producto = ?",
-            -1, &stmt, NULL) != SQLITE_OK) {
-
+        if (sqlite3_prepare_v2(db, "UPDATE PRODUCTO SET stock = stock - ? WHERE id_producto = ?", -1, &stmt, NULL) != SQLITE_OK) {
             sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
             responder_bd_error(db, respuesta, tamRespuesta);
             return;
@@ -410,11 +388,7 @@ static void comando_confirmar_compra(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CA
         linea = strtok(NULL, "#");
     }
 
-    if (sqlite3_prepare_v2(db,
-        "INSERT INTO PEDIDO (fecha_envio, total, id_carrito) "
-        "VALUES (DATE('now'), ?, ?)",
-        -1, &stmt, NULL) != SQLITE_OK) {
-
+    if (sqlite3_prepare_v2(db, "INSERT INTO PEDIDO (fecha_envio, total, id_carrito) VALUES (DATE('now'), ?, ?)", -1, &stmt, NULL) != SQLITE_OK) {
         sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
         responder_bd_error(db, respuesta, tamRespuesta);
         return;
@@ -431,7 +405,6 @@ static void comando_confirmar_compra(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CA
     }
 
     sqlite3_finalize(stmt);
-
     idPedido = (int)sqlite3_last_insert_rowid(db);
 
     sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
@@ -439,13 +412,9 @@ static void comando_confirmar_compra(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CA
     snprintf(respuesta, tamRespuesta, "OK|Compra realizada correctamente|%d|%.2f", idPedido, total);
 }
 
-static void comando_modificar_pedido(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos,
-                                     char *respuesta, int tamRespuesta) {
+static void comando_modificar_pedido(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos, char *respuesta, int tamRespuesta) {
     sqlite3_stmt *stmt = NULL;
-
-    const char *sql =
-        "UPDATE CARRITO SET estado_compra = ? "
-        "WHERE id_carrito = (SELECT id_carrito FROM PEDIDO WHERE id_pedido = ?)";
+    const char *sql = "UPDATE CARRITO SET estado_compra = ? WHERE id_carrito = (SELECT id_carrito FROM PEDIDO WHERE id_pedido = ?)";
 
     if (numCampos != 3) {
         responder(respuesta, tamRespuesta, "ERR", "Formato incorrecto. Uso: 07|id_pedido|nuevo_estado");
@@ -474,8 +443,7 @@ static void comando_modificar_pedido(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CA
     sqlite3_finalize(stmt);
 }
 
-static void comando_eliminar_pedido(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos,
-                                    char *respuesta, int tamRespuesta) {
+static void comando_eliminar_pedido(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos, char *respuesta, int tamRespuesta) {
     sqlite3_stmt *stmt = NULL;
     int idPedido;
     int idCarrito = 0;
@@ -492,12 +460,8 @@ static void comando_eliminar_pedido(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAM
         return;
     }
 
-    if (sqlite3_prepare_v2(db,
-        "SELECT id_carrito FROM PEDIDO WHERE id_pedido = ?",
-        -1, &stmt, NULL) == SQLITE_OK) {
-
+    if (sqlite3_prepare_v2(db, "SELECT id_carrito FROM PEDIDO WHERE id_pedido = ?", -1, &stmt, NULL) == SQLITE_OK) {
         sqlite3_bind_int(stmt, 1, idPedido);
-
         if (sqlite3_step(stmt) == SQLITE_ROW) {
             idCarrito = sqlite3_column_int(stmt, 0);
         }
@@ -510,10 +474,7 @@ static void comando_eliminar_pedido(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAM
 
     sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, NULL);
 
-    if (sqlite3_prepare_v2(db,
-        "DELETE FROM PEDIDO WHERE id_pedido = ?",
-        -1, &stmt, NULL) != SQLITE_OK) {
-
+    if (sqlite3_prepare_v2(db, "DELETE FROM PEDIDO WHERE id_pedido = ?", -1, &stmt, NULL) != SQLITE_OK) {
         sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
         responder_bd_error(db, respuesta, tamRespuesta);
         return;
@@ -532,10 +493,7 @@ static void comando_eliminar_pedido(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAM
     stmt = NULL;
 
     if (idCarrito > 0) {
-        if (sqlite3_prepare_v2(db,
-            "DELETE FROM LINEA_CARRITO WHERE id_carrito = ?",
-            -1, &stmt, NULL) == SQLITE_OK) {
-
+        if (sqlite3_prepare_v2(db, "DELETE FROM LINEA_CARRITO WHERE id_carrito = ?", -1, &stmt, NULL) == SQLITE_OK) {
             sqlite3_bind_int(stmt, 1, idCarrito);
             sqlite3_step(stmt);
         }
@@ -545,10 +503,7 @@ static void comando_eliminar_pedido(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAM
             stmt = NULL;
         }
 
-        if (sqlite3_prepare_v2(db,
-            "DELETE FROM CARRITO WHERE id_carrito = ?",
-            -1, &stmt, NULL) == SQLITE_OK) {
-
+        if (sqlite3_prepare_v2(db, "DELETE FROM CARRITO WHERE id_carrito = ?", -1, &stmt, NULL) == SQLITE_OK) {
             sqlite3_bind_int(stmt, 1, idCarrito);
             sqlite3_step(stmt);
         }
@@ -564,8 +519,7 @@ static void comando_eliminar_pedido(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAM
     responder(respuesta, tamRespuesta, "OK", "Pedido eliminado correctamente");
 }
 
-static void comando_ver_pedidos_usuario(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos,
-                                        char *respuesta, int tamRespuesta) {
+static void comando_ver_pedidos_usuario(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos, char *respuesta, int tamRespuesta) {
     sqlite3_stmt *stmt = NULL;
     int primero = 1;
 
@@ -587,7 +541,6 @@ static void comando_ver_pedidos_usuario(sqlite3 *db, char campos[MAX_CAMPOS][TAM
     }
 
     sqlite3_bind_int(stmt, 1, atoi(campos[1]));
-
     strcpy(respuesta, "OK|");
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -611,13 +564,9 @@ static void comando_ver_pedidos_usuario(sqlite3 *db, char campos[MAX_CAMPOS][TAM
     }
 }
 
-static void comando_anyadir_producto(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos,
-                                     char *respuesta, int tamRespuesta) {
+static void comando_anyadir_producto(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos, char *respuesta, int tamRespuesta) {
     sqlite3_stmt *stmt = NULL;
-
-    const char *sql =
-        "INSERT INTO PRODUCTO (nombre, descripcion, precio, stock, marca, id_categoria, id_proveedor) "
-        "VALUES (?, ?, ?, ?, ?, ?, 1)";
+    const char *sql = "INSERT INTO PRODUCTO (nombre, descripcion, precio, stock, marca, id_categoria, id_proveedor) VALUES (?, ?, ?, ?, ?, ?, 1)";
 
     if (numCampos != 7) {
         responder(respuesta, tamRespuesta, "ERR", "Formato incorrecto. Uso: 10|nombre|descripcion|precio|stock|marca|id_categoria");
@@ -645,15 +594,10 @@ static void comando_anyadir_producto(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CA
     sqlite3_finalize(stmt);
 }
 
-static void comando_modificar_producto(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos,
-                                       char *respuesta, int tamRespuesta) {
+static void comando_modificar_producto(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos, char *respuesta, int tamRespuesta) {
     sqlite3_stmt *stmt = NULL;
     int idProducto;
-
-    const char *sql =
-        "UPDATE PRODUCTO "
-        "SET nombre = ?, descripcion = ?, precio = ?, stock = ?, marca = ?, id_categoria = ? "
-        "WHERE id_producto = ?";
+    const char *sql = "UPDATE PRODUCTO SET nombre = ?, descripcion = ?, precio = ?, stock = ?, marca = ?, id_categoria = ? WHERE id_producto = ?";
 
     if (numCampos != 8) {
         responder(respuesta, tamRespuesta, "ERR", "Formato incorrecto. Uso: 11|id_producto|nombre|descripcion|precio|stock|marca|id_categoria");
@@ -689,8 +633,7 @@ static void comando_modificar_producto(sqlite3 *db, char campos[MAX_CAMPOS][TAM_
     sqlite3_finalize(stmt);
 }
 
-static void comando_eliminar_producto(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos,
-                                      char *respuesta, int tamRespuesta) {
+static void comando_eliminar_producto(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos, char *respuesta, int tamRespuesta) {
     sqlite3_stmt *stmt = NULL;
     int idProducto;
 
@@ -706,10 +649,7 @@ static void comando_eliminar_producto(sqlite3 *db, char campos[MAX_CAMPOS][TAM_C
         return;
     }
 
-    if (sqlite3_prepare_v2(db,
-        "DELETE FROM PRODUCTO WHERE id_producto = ?",
-        -1, &stmt, NULL) != SQLITE_OK) {
-
+    if (sqlite3_prepare_v2(db, "DELETE FROM PRODUCTO WHERE id_producto = ?", -1, &stmt, NULL) != SQLITE_OK) {
         responder_bd_error(db, respuesta, tamRespuesta);
         return;
     }
@@ -743,43 +683,30 @@ int procesarPeticion(sqlite3 *db, const char *peticion, char *respuesta, int tam
 
     if (strcmp(campos[0], "00") == 0) {
         responder(respuesta, tamRespuesta, "OK", "Conexion cerrada");
-
     } else if (strcmp(campos[0], "01") == 0) {
         comando_login(db, campos, numCampos, respuesta, tamRespuesta);
-
     } else if (strcmp(campos[0], "02") == 0) {
         comando_registrar_admin(db, campos, numCampos, respuesta, tamRespuesta);
-
     } else if (strcmp(campos[0], "03") == 0) {
         comando_registrar_cliente(db, campos, numCampos, respuesta, tamRespuesta);
-
     } else if (strcmp(campos[0], "04") == 0) {
         responder(respuesta, tamRespuesta, "ERR", "Importar catalogo no implementado");
-
     } else if (strcmp(campos[0], "05") == 0) {
         comando_ver_catalogo(db, respuesta, tamRespuesta);
-
     } else if (strcmp(campos[0], "06") == 0) {
         comando_confirmar_compra(db, campos, numCampos, respuesta, tamRespuesta);
-
     } else if (strcmp(campos[0], "07") == 0) {
         comando_modificar_pedido(db, campos, numCampos, respuesta, tamRespuesta);
-
     } else if (strcmp(campos[0], "08") == 0) {
         comando_eliminar_pedido(db, campos, numCampos, respuesta, tamRespuesta);
-
     } else if (strcmp(campos[0], "09") == 0) {
         comando_ver_pedidos_usuario(db, campos, numCampos, respuesta, tamRespuesta);
-
     } else if (strcmp(campos[0], "10") == 0) {
         comando_anyadir_producto(db, campos, numCampos, respuesta, tamRespuesta);
-
     } else if (strcmp(campos[0], "11") == 0) {
         comando_modificar_producto(db, campos, numCampos, respuesta, tamRespuesta);
-
     } else if (strcmp(campos[0], "12") == 0) {
         comando_eliminar_producto(db, campos, numCampos, respuesta, tamRespuesta);
-
     } else {
         responder(respuesta, tamRespuesta, "ERR", "Comando no reconocido");
     }
@@ -807,7 +734,6 @@ int server(sqlite3 *db) {
         }
 
         quitar_salto_linea(peticion);
-
         procesarPeticion(db, peticion, respuesta, sizeof(respuesta));
 
         printf("Servidor -> Cliente: %s\n\n", respuesta);
