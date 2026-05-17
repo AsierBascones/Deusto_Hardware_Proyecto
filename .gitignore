@@ -1,0 +1,16 @@
+# Bases de datos de SQLite
+*.sqlite
+*.db
+
+# Archivos de registro (Logs)
+logs/*.log
+*.log
+
+# Archivos compilados y ejecutables de C/C++
+*.exe
+*.o
+*.out
+
+# Carpetas de compilación de Eclipse
+Debug/
+Release/
