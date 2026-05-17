@@ -429,7 +429,7 @@ void actualizarLineaProd(sqlite3 *db, int idProd, int idCar, double precio,
 	int result;
 	sqlite3_stmt *stmt;
 	char sql[] =
-			"update LINEA_CARRITO set precio_unitrio = ? where id_producto = ? and id_carrito = ?";
+			"update LINEA_CARRITO set precio_unitario = ? where id_producto = ? and id_carrito = ?";
 	sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
 	sqlite3_bind_double(stmt, 1, precio);
 	sqlite3_bind_int(stmt, 2, idProd);

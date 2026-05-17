@@ -361,7 +361,7 @@ static void comando_confirmar_compra(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CA
         obtener_precio_stock(db, idProducto, &precio, &stock);
 
         if (sqlite3_prepare_v2(db,
-            "INSERT INTO LINEA_CARRITO (id_carrito, id_producto, cantidad, precio_unitrio) "
+            "INSERT INTO LINEA_CARRITO (id_carrito, id_producto, cantidad, precio_unitario) "
             "VALUES (?, ?, ?, ?)",
             -1, &stmt, NULL) != SQLITE_OK) {
 

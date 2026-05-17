@@ -77,7 +77,7 @@ void inicializar_base_datos(sqlite3 *db) {
 			"id_carrito INTEGER,"
 			"id_producto INTEGER,"
 			"cantidad INTEGER,"
-			"precio_unitrio REAL,"
+			"precio_unitario REAL,"
 			"PRIMARY KEY (id_carrito, id_producto),"
 			"FOREIGN KEY (id_carrito) REFERENCES CARRITO(id_carrito),"
 			"FOREIGN KEY (id_producto) REFERENCES PRODUCTO(id_producto));"
