@@ -6,7 +6,6 @@
 #include "config.h"
 #include <string.h>
 #include <stdbool.h>
-#include "main.h"
 #include <math.h>
 #include "printer.h"
 #include "gestionarPedidos.h"

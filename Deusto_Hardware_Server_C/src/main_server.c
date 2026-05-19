@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <winsock2.h> // LIBRERÍA DE RED AÑADIDA
 #include "sqlite3.h"
 #include "main_server.h"
 
@@ -715,33 +716,98 @@ int procesarPeticion(sqlite3 *db, const char *peticion, char *respuesta, int tam
 }
 
 int server(sqlite3 *db) {
+    WSADATA wsa;
+    SOCKET server_fd, cliente_fd;
+    struct sockaddr_in server_addr, cliente_addr;
+    int addr_len;
     char peticion[MAX_PETICION];
     char respuesta[MAX_RESPUESTA];
 
-    printf("\n=== SERVIDOR ===\n");
-    printf("Escribe una peticion del cliente.\n");
-    printf("Ejemplos:\n");
-    printf("01|email|contrasena\n");
-    printf("05\n");
-    printf("06|1|1,1#2,1\n");
-    printf("00 para salir\n\n");
+    printf("\n=== SERVIDOR INICIANDO ===\n");
 
-    while (1) {
-        printf("Cliente -> Servidor: ");
-
-        if (fgets(peticion, sizeof(peticion), stdin) == NULL) {
-            break;
-        }
-
-        quitar_salto_linea(peticion);
-        procesarPeticion(db, peticion, respuesta, sizeof(respuesta));
-
-        printf("Servidor -> Cliente: %s\n\n", respuesta);
-
-        if (strcmp(peticion, "00") == 0) {
-            break;
-        }
+    // 1. Inicializar Winsock
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+        printf("Error: No se pudo inicializar Winsock. Codigo: %d\n", WSAGetLastError());
+        return 1;
     }
 
+    // 2. Crear el socket principal del servidor
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+        printf("Error: No se pudo crear el socket. Codigo: %d\n", WSAGetLastError());
+        WSACleanup();
+        return 1;
+    }
+
+    // 3. Configurar la direccion y el puerto (8080)
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY; // Escucha en todas las interfaces de red locales
+    server_addr.sin_port = htons(8080);
+
+    // 4. Bind: Vincular el socket al puerto
+    if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
+        printf("Error en Bind. El puerto 8080 podria estar en uso. Codigo: %d\n", WSAGetLastError());
+        closesocket(server_fd);
+        WSACleanup();
+        return 1;
+    }
+
+    // 5. Listen: Poner el servidor en modo escucha
+    listen(server_fd, 3); // Permite hasta 3 conexiones en espera
+    printf("[*] Servidor escuchando en el puerto 8080...\n");
+
+    addr_len = sizeof(struct sockaddr_in);
+
+    // Bucle infinito: el servidor nunca se apaga, siempre espera clientes
+    while (1) {
+        printf("[*] Esperando a que un cliente se conecte...\n");
+
+        // 6. Accept: El programa se bloquea aqui hasta que un cliente llama
+        cliente_fd = accept(server_fd, (struct sockaddr *)&cliente_addr, &addr_len);
+        if (cliente_fd == INVALID_SOCKET) {
+            printf("Error al aceptar la conexion del cliente.\n");
+            continue; // Si falla uno, seguimos esperando al siguiente
+        }
+
+        printf("[+] Cliente conectado con exito!\n");
+
+        // Bucle de comunicacion con este cliente en concreto
+        while (1) {
+            memset(peticion, 0, MAX_PETICION); // Limpiar la memoria antes de leer
+
+            // 7. Recibir datos del cliente
+            int recibidos = recv(cliente_fd, peticion, MAX_PETICION - 1, 0);
+
+            if (recibidos == SOCKET_ERROR) {
+                printf("[-] Error al recibir datos o cliente desconectado bruscamente.\n");
+                break;
+            } else if (recibidos == 0) {
+                printf("[-] El cliente ha cerrado la conexion de forma segura.\n");
+                break;
+            }
+
+            quitar_salto_linea(peticion);
+            printf("Cliente -> Servidor: %s\n", peticion);
+
+            // Procesar la trama
+            procesarPeticion(db, peticion, respuesta, sizeof(respuesta));
+
+            printf("Servidor -> Cliente: %s\n", respuesta);
+
+            // 8. Enviar la respuesta de vuelta al cliente
+            send(cliente_fd, respuesta, strlen(respuesta), 0);
+
+            // Si el cliente pide desconectarse (comando "00"), rompemos el bucle
+            if (strcmp(peticion, "00") == 0) {
+                break;
+            }
+        }
+
+        // 9. Cerramos la linea con este cliente y volvemos a esperar a otro
+        closesocket(cliente_fd);
+        printf("[*] Conexion cerrada con este cliente. Volviendo a escuchar...\n\n");
+    }
+
+    closesocket(server_fd);
+    WSACleanup();
     return 0;
 }
