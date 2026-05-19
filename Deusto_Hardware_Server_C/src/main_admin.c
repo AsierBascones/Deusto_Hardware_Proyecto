@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
+#include "main.h"
 #include "printer.h"
 #include "gestionarPedidos.h"
 #include "gestionarProductos.h"

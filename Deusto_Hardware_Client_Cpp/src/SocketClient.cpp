@@ -1,8 +1,6 @@
 #include "SocketClient.h"
 #include <iostream>
 
-#pragma comment(lib, "ws2_32.lib")
-
 using namespace std;
 
 SocketClient::SocketClient(const string &ipServidor, int puertoServidor) {
