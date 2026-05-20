@@ -62,7 +62,7 @@ void serverOAdmin(sqlite3 *db) {
             sqlite3_close(db);
             exit(0);
         } else {
-            printf("Opcion no es valida\n");
+            printf("Opcion no valida\n");
         }
     }
 }
