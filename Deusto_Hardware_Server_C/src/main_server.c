@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <winsock2.h> //LIBRERIA DE RED AÑADIDA
+#include <winsock2.h>
 #include "sqlite3.h"
 #include "main_server.h"
 #include "logger.h"
@@ -131,6 +131,7 @@ static void comando_login(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int n
         snprintf(respuesta, tamRespuesta, "OK|Login correcto|%s|%d",
                  rol ? (const char *)rol : "CLIENTE",
                  idUsuario);
+
         if (rol && strcmp((const char *)rol, "ADMIN") == 0) {
             log_msg(LOG_INFO, "Login ADMIN correcto (email=%s, id=%d)", campos[1], idUsuario);
         }
@@ -196,6 +197,7 @@ static void comando_registrar_cliente(sqlite3 *db, char campos[MAX_CAMPOS][TAM_C
 
     if (sqlite3_step(stmt) == SQLITE_DONE) {
         responder(respuesta, tamRespuesta, "OK", "Cliente registrado correctamente");
+        log_msg(LOG_INFO, "Nuevo cliente registrado (email=%s, ciudad=%s)", campos[3], campos[7]);
     } else {
         responder(respuesta, tamRespuesta, "ERR", "No se pudo registrar el cliente");
     }
@@ -418,6 +420,7 @@ static void comando_confirmar_compra(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CA
     sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
 
     snprintf(respuesta, tamRespuesta, "OK|Compra realizada correctamente|%d|%.2f", idPedido, total);
+    log_msg(LOG_INFO, "Compra confirmada (usuario=%d, pedido=%d, total=%.2f EUR)", idUsuario, idPedido, total);
 }
 
 static void comando_modificar_pedido(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int numCampos, char *respuesta, int tamRespuesta) {
@@ -595,6 +598,7 @@ static void comando_anyadir_producto(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CA
 
     if (sqlite3_step(stmt) == SQLITE_DONE) {
         responder(respuesta, tamRespuesta, "OK", "Producto anadido correctamente");
+        log_msg(LOG_INFO, "Producto anadido via TCP (nombre='%s', precio=%s)", campos[1], campos[3]);
     } else {
         responder_bd_error(db, respuesta, tamRespuesta);
     }
@@ -634,6 +638,7 @@ static void comando_modificar_producto(sqlite3 *db, char campos[MAX_CAMPOS][TAM_
 
     if (sqlite3_step(stmt) == SQLITE_DONE) {
         responder(respuesta, tamRespuesta, "OK", "Producto modificado correctamente");
+        log_msg(LOG_INFO, "Producto modificado via TCP (id=%d)", idProducto);
     } else {
         responder_bd_error(db, respuesta, tamRespuesta);
     }
@@ -666,6 +671,7 @@ static void comando_eliminar_producto(sqlite3 *db, char campos[MAX_CAMPOS][TAM_C
 
     if (sqlite3_step(stmt) == SQLITE_DONE) {
         responder(respuesta, tamRespuesta, "OK", "Producto eliminado correctamente");
+        log_msg(LOG_INFO, "Producto eliminado via TCP (id=%d)", idProducto);
     } else {
         responder_bd_error(db, respuesta, tamRespuesta);
     }
@@ -690,8 +696,11 @@ int procesarPeticion(sqlite3 *db, const char *peticion, char *respuesta, int tam
         return 0;
     }
 
+    log_msg(LOG_INFO, "TCP <- comando '%s' (%d campos)", campos[0], numCampos);
+
     if (strcmp(campos[0], "00") == 0) {
         responder(respuesta, tamRespuesta, "OK", "Conexion cerrada");
+        log_msg(LOG_INFO, "TCP -> cliente solicita desconexion");
     } else if (strcmp(campos[0], "01") == 0) {
         comando_login(db, campos, numCampos, respuesta, tamRespuesta);
     } else if (strcmp(campos[0], "02") == 0) {
@@ -734,7 +743,6 @@ int server(sqlite3 *db) {
     printf("\n=== SERVIDOR INICIANDO ===\n");
     log_msg(LOG_INFO, "Modo SERVIDOR TCP iniciado");
 
-    /* 1. Inicializar Winsock */
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
         int err = WSAGetLastError();
         printf("Error: No se pudo inicializar Winsock. Codigo: %d\n", err);
@@ -742,7 +750,6 @@ int server(sqlite3 *db) {
         return 1;
     }
 
-    /* 2. Crear el socket principal del servidor */
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
         int err = WSAGetLastError();
         printf("Error: No se pudo crear el socket. Codigo: %d\n", err);
@@ -751,12 +758,10 @@ int server(sqlite3 *db) {
         return 1;
     }
 
-    /* 3. Configurar la direccion y el puerto (8080) */
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(8080);
 
-    /* 4. Bind */
     if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
         int err = WSAGetLastError();
         printf("Error en Bind. El puerto 8080 podria estar en uso. Codigo: %d\n", err);
@@ -766,7 +771,6 @@ int server(sqlite3 *db) {
         return 1;
     }
 
-    /* 5. Listen */
     listen(server_fd, 3);
     printf("[*] Servidor escuchando en el puerto 8080...\n");
     log_msg(LOG_INFO, "Servidor escuchando en el puerto 8080");
@@ -785,6 +789,7 @@ int server(sqlite3 *db) {
         }
 
         printf("[+] Cliente conectado con exito!\n");
+        log_msg(LOG_INFO, "Cliente TCP conectado");
 
         while (1) {
             memset(peticion, 0, MAX_PETICION);
@@ -817,6 +822,7 @@ int server(sqlite3 *db) {
 
         closesocket(cliente_fd);
         printf("[*] Conexion cerrada con este cliente. Volviendo a escuchar...\n\n");
+        log_msg(LOG_INFO, "Conexion TCP cerrada con cliente");
     }
 
     closesocket(server_fd);

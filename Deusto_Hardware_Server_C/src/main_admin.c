@@ -44,10 +44,13 @@ void menu(sqlite3 *db) {
         printf("%c\n", opcion);
 
         if (opcion == '1') {
+            log_msg(LOG_INFO, "Admin menu: 1 - Importar catalogo");
             importarFichero(db);
         } else if (opcion == '2') {
+            log_msg(LOG_INFO, "Admin menu: 2 - Gestionar pedidos");
             gestionarPedidos(db);
         } else if (opcion == '3') {
+            log_msg(LOG_INFO, "Admin menu: 3 - Gestionar productos");
             gestionarProductos(db);
         } else if (opcion == '4') {
             printf("Desea borrar la base de datos?\n");
@@ -58,15 +61,21 @@ void menu(sqlite3 *db) {
 
             if (c == 's' || c == 'S') {
                 printf("Borrando\n");
+                log_msg(LOG_WARN, "Admin menu: 4 - Borrado de BD confirmado por el admin");
                 borrarBase(db);
+            } else {
+                log_msg(LOG_INFO, "Admin menu: 4 - Borrado de BD cancelado");
             }
         } else if (opcion == '5') {
             printf("Cerrando sesion\n");
+            log_msg(LOG_INFO, "Admin menu: 5 - Cerrar sesion");
             permanecer = false;
             inicio(db);
         } else if (opcion == '6') {
+            log_msg(LOG_INFO, "Admin menu: 6 - Exportar datos");
             exportarFichero(db);
         } else {
+            log_msg(LOG_WARN, "Admin menu: opcion invalida '%c'", opcion);
             printError(db, 6, "Opcion");
         }
     }
@@ -103,18 +112,24 @@ void gestionarPedidos(sqlite3 *db) {
         printf("%c\n", opcion);
 
         if (opcion == '1') {
+            log_msg(LOG_INFO, "Pedidos menu: 1 - Visualizar pedidos");
             visualizarPedidos(db);
         } else if (opcion == '2') {
+            log_msg(LOG_INFO, "Pedidos menu: 2 - Anadir pedidos");
             anyadirPedidos(db);
         } else if (opcion == '3') {
+            log_msg(LOG_INFO, "Pedidos menu: 3 - Modificar pedidos");
             modificarPedidos(db);
         } else if (opcion == '4') {
+            log_msg(LOG_INFO, "Pedidos menu: 4 - Eliminar pedidos");
             eliminarPedidos(db);
         } else if (opcion == '5') {
             printf("Saliendo\n");
+            log_msg(LOG_INFO, "Pedidos menu: 5 - Salir");
             permanecer = false;
             menu(db);
         } else {
+            log_msg(LOG_WARN, "Pedidos menu: opcion invalida '%c'", opcion);
             printError(db, 6, "Opcion");
         }
     }
@@ -140,18 +155,24 @@ void gestionarProductos(sqlite3 *db) {
         printf("%c\n", opcion);
 
         if (opcion == '1') {
+            log_msg(LOG_INFO, "Productos menu: 1 - Visualizar productos");
             visualizarProductos(db);
         } else if (opcion == '2') {
+            log_msg(LOG_INFO, "Productos menu: 2 - Anadir productos");
             anyadirProductos(db);
         } else if (opcion == '3') {
+            log_msg(LOG_INFO, "Productos menu: 3 - Modificar productos");
             modificarProductos(db);
         } else if (opcion == '4') {
+            log_msg(LOG_INFO, "Productos menu: 4 - Eliminar productos");
             eliminarProductos(db);
         } else if (opcion == '5') {
             printf("Saliendo\n");
+            log_msg(LOG_INFO, "Productos menu: 5 - Salir");
             permanecer = false;
             menu(db);
         } else {
+            log_msg(LOG_WARN, "Productos menu: opcion invalida '%c'", opcion);
             printError(db, 6, "Opcion");
         }
     }
@@ -604,15 +625,19 @@ void inicio(sqlite3 *db) {
         printf("%c\n", opcion);
 
         if (opcion == '1') {
+            log_msg(LOG_INFO, "Gestion Tienda menu: 1 - Iniciar Sesion");
             permanecer = false;
             iniciarSesion(db);
         } else if (opcion == '2') {
+            log_msg(LOG_INFO, "Gestion Tienda menu: 2 - Registrar Administrador");
             permanecer = false;
             registrarAdmin(db);
         } else if (opcion == '3') {
+            log_msg(LOG_INFO, "Gestion Tienda menu: 3 - Salir al menu principal");
             permanecer = false;
             serverOAdmin(db);
         } else {
+            log_msg(LOG_WARN, "Gestion Tienda menu: opcion invalida '%c'", opcion);
             printError(db, 6, "Opcion");
         }
     }

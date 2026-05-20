@@ -5,6 +5,7 @@
 #include <sstream>
 #include "MenuUsuario.h"
 #include "SocketClient.h"
+#include "Logger.h"
 
 using namespace std;
 
@@ -60,9 +61,11 @@ bool MenuUsuario::IniciarSesion(SocketClient *cliente) {
             string idStr = respuesta.substr(tercerPalo + 1);
             this->idUsuarioLogueado = stoi(idStr);
         }
+        Logger::msg(Logger::INFO, "Login correcto (email=%s, id=%d)", email.c_str(), this->idUsuarioLogueado);
         return true;
     } else {
         cout << "\n[-] Error al iniciar sesion. Verifica tus datos." << endl;
+        Logger::msg(Logger::WARN, "Login fallido (email=%s)", email.c_str());
         return false;
     }
 }
@@ -104,8 +107,10 @@ bool MenuUsuario::RegistrarUsuario(SocketClient *cliente) {
     cout << "\nRespuesta del servidor: " << resCorta << endl;
 
     if (resCorta == "OK") {
+        Logger::msg(Logger::INFO, "Registro de cliente OK (email=%s, ciudad=%s)", email.c_str(), ciudad.c_str());
         return true;
     } else {
+        Logger::msg(Logger::WARN, "Registro de cliente fallido (email=%s)", email.c_str());
         return false;
     }
 }
@@ -129,6 +134,7 @@ void MenuUsuario::VerPedidos(SocketClient *cliente) {
     string comando = "09";
     string respuesta;
 
+    Logger::msg(Logger::INFO, "Consultando historial de pedidos (idUsuario=%d)", this->idUsuarioLogueado);
     cout << "\n[*] Consultando el historial del usuario..." << endl;
     cliente->enviarMensaje(comando + "|" + to_string(this->idUsuarioLogueado));
     respuesta = cliente->recibirMensaje();
@@ -185,6 +191,7 @@ void MenuUsuario::VerPedidos(SocketClient *cliente) {
 void MenuUsuario::ConfirmarCompra(SocketClient *cliente) {
     if (carritoLocal.empty()) {
         cout << "[-] El carrito esta vacio. Anade productos antes de comprar." << endl;
+        Logger::msg(Logger::WARN, "Confirmar compra abortado: carrito vacio");
         return;
     }
 
@@ -205,10 +212,12 @@ void MenuUsuario::ConfirmarCompra(SocketClient *cliente) {
     respuesta = cliente->recibirMensaje();
 
     if (respuesta.substr(0, 2) == "OK") {
+        Logger::msg(Logger::INFO, "Compra confirmada por el servidor (idUsuario=%d, items=%zu)", this->idUsuarioLogueado, carritoLocal.size());
         carritoLocal.clear();
         cout << "[+] Compra realizada correctamente en el servidor." << endl;
         cout << "[*] Carrito local vaciado con exito." << endl;
     } else {
+        Logger::msg(Logger::WARN, "Compra rechazada por el servidor: %s", respuesta.c_str());
         cout << "[-] Error al procesar la compra: " << respuesta << endl;
     }
 }
@@ -254,6 +263,9 @@ void MenuUsuario::AnyadirProductos(SocketClient *cliente) {
     if (!duplicado) {
         ItemCarrito nuevoItem = {idProd, cantidadProd};
         carritoLocal.push_back(nuevoItem);
+        Logger::msg(Logger::INFO, "Anadido al carrito local: producto=%s, cantidad=%s", idProd.c_str(), cantidadProd.c_str());
+    } else {
+        Logger::msg(Logger::INFO, "Cantidad actualizada en carrito local: producto=%s (+%s)", idProd.c_str(), cantidadProd.c_str());
     }
 
     cout << "\n[+] Producto guardado en el carrito de memoria local (Peticiones al servidor: 0)" << endl;
@@ -261,12 +273,14 @@ void MenuUsuario::AnyadirProductos(SocketClient *cliente) {
 
 void MenuUsuario::MostrarCatalogo(SocketClient *cliente) {
     if (this->catalogoDescargado) {
+        Logger::msg(Logger::INFO, "Mostrar catalogo: desde cache local (%zu productos)", catalogoLocal.size());
         cout << "\n=== CATALOGO DE PRODUCTOS (Desde Cache Local en RAM) ===" << endl;
         for (const auto& prod : catalogoLocal) {
             prod.mostrar();
         }
         return;
     }
+    Logger::msg(Logger::INFO, "Mostrar catalogo: descargando del servidor...");
 
     string comando = "05";
     cliente->enviarMensaje(comando);
@@ -308,6 +322,7 @@ void MenuUsuario::MostrarCatalogo(SocketClient *cliente) {
     }
 
     this->catalogoDescargado = true;
+    Logger::msg(Logger::INFO, "Catalogo descargado del servidor (%zu productos)", catalogoLocal.size());
 
     cout << "\n=== CATALOGO DE PRODUCTOS (Descargado del Servidor) ===" << endl;
     for (const auto& prod : catalogoLocal) {
