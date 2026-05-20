@@ -3,6 +3,8 @@
 #include "SocketClient.h"
 #include <string>
 #include <iostream>
+#include <algorithm>
+#include <cctype>
 using namespace std;
 MenuUsuario::MenuUsuario(){
 }
@@ -10,14 +12,14 @@ MenuUsuario::~MenuUsuario(){
 
 }
 char MenuUsuario::MenuInicial(){
-	char opcion;
+	string opcion;
 
 	cout << "Bienvenido a Deusto Hardware" << endl;
 	cout << "1. Iniciar Sesion" << endl;
 	cout << "2. Registrar Usuario" << endl;
 	cout << "3. Salir" << endl;
-	cin >> opcion;
-	return opcion;
+	getline(cin, opcion);
+	return opcion[0];
 }
 bool MenuUsuario::IniciarSesion(SocketClient *cliente){
 	string comando = "01";
@@ -26,9 +28,9 @@ bool MenuUsuario::IniciarSesion(SocketClient *cliente){
 	string respuesta;
 	string resCorta;
 	cout << "Introducte el email" << endl;
-	cin >> email;
+	getline(cin, email);
 	cout << "Introducte la contraseña" << endl;
-	cin >> contrasenya;
+	getline(cin, contrasenya);
 	cliente->enviarMensaje(comando + "|" + email + "|" + contrasenya);
 	respuesta = cliente->recibirMensaje();
 	size_t pos = respuesta.find('|');
@@ -36,7 +38,7 @@ bool MenuUsuario::IniciarSesion(SocketClient *cliente){
 		resCorta = respuesta.substr(0, pos);
 	}
 	cout << resCorta << endl;
-	if(strcmp(resCorta.c_str(), "OK") == 0){
+	if(resCorta == "OK"){
 		return true;
 	}else{
 		return false;
@@ -55,19 +57,19 @@ bool MenuUsuario::RegistrarUsuario(SocketClient *cliente){
 	string resCorta;
 	cout << "Registro de Usuario" << endl;
 	cout << "Introduce tu nombre" << endl;
-	cin >> nombre;
+	getline(cin, nombre);
 	cout << "Introduce tus apellidos" << endl;
-	cin >> apellidos;
+	getline(cin, apellidos);
 	cout << "Introduce tu correo" << endl;
-	cin >> email;
+	getline(cin, email);
 	cout << "Introduce tu contraseña" << endl;
-	cin >> contrasena;
+	getline(cin, contrasena);
 	cout << "Introduce tu telefono" << endl;
-	cin >> telefono;
+	getline(cin, telefono);
 	cout << "Introduce tu direccion" << endl;
-	cin >> direccion;
+	getline(cin, direccion);
 	cout << "Introduce tu ciudad" << endl;
-	cin >> ciudad;
+	getline(cin, ciudad);
 	cliente->enviarMensaje(comando + "|" + nombre + "|" + apellidos + "|" + email + "|" + contrasena + "|" + telefono + "|" + direccion + "|" + ciudad);
 	respuesta = cliente->recibirMensaje();
 	size_t pos = respuesta.find('|');
@@ -75,29 +77,29 @@ bool MenuUsuario::RegistrarUsuario(SocketClient *cliente){
 		resCorta = respuesta.substr(0, pos);
 	}
 	cout << resCorta << endl;
-	if(strcmp(resCorta.c_str(), "OK") == 0){
+	if(resCorta == "OK"){
 		return true;
 	}else{
 		return false;
 	}
 }
 char MenuUsuario::MenuPrincipal(){
-	char opcion;
+	string opcion;
 	cout << "Bienvenido" << endl;
 	cout << "1. Ver Catalogo" << endl;
 	cout << "2. Anyadir productos al carrito" << endl;
 	cout << "3. Confirmar compra" << endl;
 	cout << "4. Ver mis pedidos" << endl;
 	cout << "5. Volver" << endl;
-	cin >> opcion;
-	return opcion;
+	getline(cin, opcion);
+	return opcion[0];
 }
 void MenuUsuario::VerPedidos(SocketClient *cliente){
 	string comando = "09";
 	string id;
 	string respuesta;
 	cout << "Introduce el id" << endl;
-	cin >> id;
+	getline(cin, id);
 	cliente->enviarMensaje(comando + "|" + id);
 	respuesta = cliente->recibirMensaje();
 	cout << respuesta << endl;
@@ -105,24 +107,47 @@ void MenuUsuario::VerPedidos(SocketClient *cliente){
 void MenuUsuario::ConfirmarCompra(SocketClient *cliente){
 	string respuesta;
 	string comando = "06";
-	int idUsuario;
-	int cantidad;
-	int idProd;
+	string idUsuario;
+	string cantidad;
+	string idProd;
 	string cantidadProd;
-	cout << "Introductr el id" << endl;
-	cin >> idUsuario;
+	int cantidadInt;
+	bool valido = false;
+	cout << "Introducte el id" << endl;
+	getline(cin, idUsuario);
+	while(!valido){
+		if (all_of(idUsuario.begin(), idUsuario.end(), ::isdigit)) {
+			valido = true;
+		} else {
+			cout << "Solo se permiten dígitos" << endl;
+			cout << "Introducte el id" << endl;
+			getline(cin, idUsuario);
+		}
+	}
 	cout << "Cuantos Productos?" << endl;
-	cin >> cantidad;
-	string texto = comando + "|" + to_string(idUsuario) + "|";
-	for (int i = 0; i < cantidad; i++){
+	getline(cin, cantidad);
+
+	string texto = comando + "|" + idUsuario + "|";
+	cantidadInt = stoi(cantidad);
+	for (int i = 0; i < cantidadInt; i++){
+		valido = false;
 		cout << "Introducir el id del Producto" << endl;
-		cin >> idProd;
+		getline(cin, idProd);
+		while(!valido){
+			if (all_of(idProd.begin(), idProd.end(), ::isdigit)) {
+				valido = true;
+			} else {
+				cout << "Solo se permiten dígitos" << endl;
+				cout << "Introducte el id del Producto" << endl;
+				getline(cin, idProd);
+			}
+		}
 		cout << "Introducir la cantidad" << endl;
-		cin >> cantidadProd;
+		getline(cin, cantidadProd);
 		if(i > 0){
 			texto += "#";
 		}
-		texto += to_string(idProd);
+		texto += idProd;
 		texto += ",";
 		texto += cantidadProd;
 	}
@@ -134,24 +159,24 @@ void MenuUsuario::AnyadirProductos(SocketClient *cliente){
 	string comando = "10";
 	string nombre;
 	string desc;
-	double precio;
-	int stock;
+	string precio;
+	string stock;
 	string marca;
-	int idCategoria;
+	string idCategoria;
 	string respuesta;
 	cout << "Introduce el nombre del producto" << endl;
-	cin >> nombre;
+	getline(cin, nombre);
 	cout << "Introduce la descripcion" << endl;
-	cin >> desc;
+	getline(cin, desc);
 	cout << "Introduce el precio" << endl;
-	cin >> precio;
+	getline(cin, precio);
 	cout << "Introduce el stock" << endl;
-	cin >> stock;
+	getline(cin, stock);
 	cout << "Introduce la marca" << endl;
-	cin >> marca;
+	getline(cin, marca);
 	cout << "Introduce el id de la Categoria" << endl;
-	cin >> idCategoria;
-	cliente->enviarMensaje(comando + "|" + nombre + "|" + desc + "|" + to_string(precio) + "|" + to_string(stock) + "|" + marca + "|" + to_string(idCategoria));
+	getline(cin, idCategoria);
+	cliente->enviarMensaje(comando + "|" + nombre + "|" + desc + "|" + precio + "|" + stock + "|" + marca + "|" + idCategoria);
 	respuesta = cliente->recibirMensaje();
 	cout << respuesta << endl;
 }
