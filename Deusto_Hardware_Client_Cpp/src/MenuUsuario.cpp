@@ -2,14 +2,15 @@
 #include <string>
 #include <algorithm>
 #include <cctype>
+#include <sstream>
 #include "MenuUsuario.h"
 #include "SocketClient.h"
 
 using namespace std;
 
 MenuUsuario::MenuUsuario() {
-    // Iniciamos el menú con un valor no válido por defecto
     this->idUsuarioLogueado = -1;
+    this->catalogoDescargado = false;
 }
 
 MenuUsuario::~MenuUsuario() {
@@ -18,10 +19,11 @@ MenuUsuario::~MenuUsuario() {
 char MenuUsuario::MenuInicial() {
     string opcion;
 
-    cout << "Bienvenido a Deusto Hardware" << endl;
-    cout << "1. Iniciar Sesion" << endl;
-    cout << "2. Registrar Usuario" << endl;
-    cout << "3. Salir" << endl;
+    cout << " Bienvenido a Deusto Hardware" << endl;
+    cout << " 1. Iniciar Sesion" << endl;
+    cout << " 2. Registrar Usuario" << endl;
+    cout << " 3. Salir" << endl;
+    cout << " Selecciona una opcion: ";
     getline(cin, opcion);
 
     return opcion[0];
@@ -34,9 +36,9 @@ bool MenuUsuario::IniciarSesion(SocketClient *cliente) {
     string respuesta;
     string resCorta;
 
-    cout << "Introducte el email" << endl;
+    cout << " Introduce el email: ";
     getline(cin, email);
-    cout << "Introducte la contraseña" << endl;
+    cout << " Introduce la clave: ";
     getline(cin, contrasenya);
 
     cliente->enviarMensaje(comando + "|" + email + "|" + contrasenya);
@@ -46,20 +48,21 @@ bool MenuUsuario::IniciarSesion(SocketClient *cliente) {
     if (pos != string::npos) {
         resCorta = respuesta.substr(0, pos);
     }
-    cout << resCorta << endl;
 
     if (resCorta == "OK") {
-        // Aquí extraemos el ID del usuario
+        cout << "\n[+] Login correcto. Bienvenido de nuevo." << endl;
+
         size_t primerPalo = respuesta.find('|');
         size_t segundoPalo = respuesta.find('|', primerPalo + 1);
         size_t tercerPalo = respuesta.find('|', segundoPalo + 1);
 
         if (tercerPalo != string::npos) {
             string idStr = respuesta.substr(tercerPalo + 1);
-            this->idUsuarioLogueado = stoi(idStr); // Lo guardamos
+            this->idUsuarioLogueado = stoi(idStr);
         }
         return true;
     } else {
+        cout << "\n[-] Error al iniciar sesion. Verifica tus datos." << endl;
         return false;
     }
 }
@@ -76,20 +79,19 @@ bool MenuUsuario::RegistrarUsuario(SocketClient *cliente) {
     string respuesta;
     string resCorta;
 
-    cout << "Registro de Usuario" << endl;
-    cout << "Introduce tu nombre" << endl;
+    cout << " Introduce tu nombre: ";
     getline(cin, nombre);
-    cout << "Introduce tus apellidos" << endl;
+    cout << " Introduce tus apellidos: ";
     getline(cin, apellidos);
-    cout << "Introduce tu correo" << endl;
+    cout << " Introduce tu correo: ";
     getline(cin, email);
-    cout << "Introduce tu contraseña" << endl;
+    cout << " Introduce tu clave: ";
     getline(cin, contrasena);
-    cout << "Introduce tu telefono" << endl;
+    cout << " Introduce tu telefono: ";
     getline(cin, telefono);
-    cout << "Introduce tu direccion" << endl;
+    cout << " Introduce tu direccion: ";
     getline(cin, direccion);
-    cout << "Introduce tu ciudad" << endl;
+    cout << " Introduce tu ciudad: ";
     getline(cin, ciudad);
 
     cliente->enviarMensaje(comando + "|" + nombre + "|" + apellidos + "|" + email + "|" + contrasena + "|" + telefono + "|" + direccion + "|" + ciudad);
@@ -99,7 +101,7 @@ bool MenuUsuario::RegistrarUsuario(SocketClient *cliente) {
     if (pos != string::npos) {
         resCorta = respuesta.substr(0, pos);
     }
-    cout << resCorta << endl;
+    cout << "\nRespuesta del servidor: " << resCorta << endl;
 
     if (resCorta == "OK") {
         return true;
@@ -111,12 +113,13 @@ bool MenuUsuario::RegistrarUsuario(SocketClient *cliente) {
 char MenuUsuario::MenuPrincipal() {
     string opcion;
 
-    cout << "Bienvenido" << endl;
-    cout << "1. Ver Catalogo" << endl;
-    cout << "2. Anyadir productos al carrito" << endl;
-    cout << "3. Confirmar compra" << endl;
-    cout << "4. Ver mis pedidos" << endl;
-    cout << "5. Volver" << endl;
+    cout << " MENU PRINCIPAL" << endl;
+    cout << " 1. Ver Catalogo" << endl;
+    cout << " 2. Anadir productos al carrito" << endl;
+    cout << " 3. Confirmar compra" << endl;
+    cout << " 4. Ver mis pedidos" << endl;
+    cout << " 5. Volver al menu inicial" << endl;
+    cout << " Selecciona una opcion: ";
     getline(cin, opcion);
 
     return opcion[0];
@@ -126,27 +129,25 @@ void MenuUsuario::VerPedidos(SocketClient *cliente) {
     string comando = "09";
     string respuesta;
 
-    // Aquí ya no pedimos el ID al usuario, lo usamos directamente
-    cout << "[*] Consultando el historial del usuario..." << endl;
+    cout << "\n[*] Consultando el historial del usuario..." << endl;
     cliente->enviarMensaje(comando + "|" + to_string(this->idUsuarioLogueado));
     respuesta = cliente->recibirMensaje();
+
+    cout << "---------------------------------------------" << endl;
     cout << respuesta << endl;
+    cout << "---------------------------------------------" << endl;
 }
 
 void MenuUsuario::ConfirmarCompra(SocketClient *cliente) {
-    // Si la cesta local está vacía, no hacemos ninguna llamada al server
     if (carritoLocal.empty()) {
-        cout << "El carrito esta vacio. Anyade productos antes de comprar." << endl;
+        cout << "[-] El carrito esta vacio. Anade productos antes de comprar." << endl;
         return;
     }
 
     string respuesta;
     string comando = "06";
-
-    // Aquí también usamos el ID del usuario
     string texto = comando + "|" + to_string(this->idUsuarioLogueado) + "|";
 
-    // Recorremos todo nuestro carrito local en RAM para empaquetarlo (id,cant#id,cant)
     for (size_t i = 0; i < carritoLocal.size(); i++) {
         if (i > 0) {
             texto += "#";
@@ -158,48 +159,44 @@ void MenuUsuario::ConfirmarCompra(SocketClient *cliente) {
 
     cliente->enviarMensaje(texto);
     respuesta = cliente->recibirMensaje();
-    cout << respuesta << endl;
 
-    // Si el servidor devuelve OK, vaciamos el carrito local
     if (respuesta.substr(0, 2) == "OK") {
         carritoLocal.clear();
-        cout << "[*] Compra finalizada. Carrito local vaciado." << endl;
+        cout << "[+] Compra realizada correctamente en el servidor." << endl;
+        cout << "[*] Carrito local vaciado con exito." << endl;
+    } else {
+        cout << "[-] Error al procesar la compra: " << respuesta << endl;
     }
 }
 
 void MenuUsuario::AnyadirProductos(SocketClient *cliente) {
-    // Esta función ya no usa el comando 10 ni envía datos por red.
-    // Guarda la información en la estructura 'carritoLocal' dentro de la memoria RAM del cliente.
     string idProd;
     string cantidadProd;
     bool valido = false;
 
-    cout << "Introducir el id del Producto" << endl;
+    cout << " Introduce el ID del Producto: ";
     getline(cin, idProd);
     while (!valido) {
-        if (all_of(idProd.begin(), idProd.end(), ::isdigit)) {
+        if (all_of(idProd.begin(), idProd.end(), ::isdigit) && !idProd.empty()) {
             valido = true;
         } else {
-            cout << "Solo se permiten dígitos" << endl;
-            cout << "Introducte el id del Producto" << endl;
+            cout << " [!] Solo se permiten digitos. Introduce el ID: ";
             getline(cin, idProd);
         }
     }
 
-    cout << "Introducir la cantidad" << endl;
+    cout << " Introduce la cantidad: ";
     getline(cin, cantidadProd);
     valido = false;
     while (!valido) {
-        if (all_of(cantidadProd.begin(), cantidadProd.end(), ::isdigit)) {
+        if (all_of(cantidadProd.begin(), cantidadProd.end(), ::isdigit) && !cantidadProd.empty()) {
             valido = true;
         } else {
-            cout << "Solo se permiten dígitos" << endl;
-            cout << "Introducir la cantidad" << endl;
+            cout << " [!] Solo se permiten digitos. Introduce la cantidad: ";
             getline(cin, cantidadProd);
         }
     }
 
-    // Si el producto ya estaba en la cesta local, sumamos la cantidad para evitar repetidos
     bool duplicado = false;
     for (auto &item : carritoLocal) {
         if (item.idProducto == idProd) {
@@ -210,11 +207,66 @@ void MenuUsuario::AnyadirProductos(SocketClient *cliente) {
         }
     }
 
-    // Si no estaba repetido, metemos el struct nuevo en el vector
     if (!duplicado) {
         ItemCarrito nuevoItem = {idProd, cantidadProd};
         carritoLocal.push_back(nuevoItem);
     }
 
-    cout << "[+] Producto guardado en el carrito de memoria local (Peticiones al servidor: 0)" << endl;
+    cout << "\n[+] Producto guardado en el carrito de memoria local (Peticiones al servidor: 0)" << endl;
+}
+
+void MenuUsuario::MostrarCatalogo(SocketClient *cliente) {
+    if (this->catalogoDescargado) {
+        cout << "\n=== CATALOGO DE PRODUCTOS (Desde Cache Local en RAM) ===" << endl;
+        for (const auto& prod : catalogoLocal) {
+            prod.mostrar();
+        }
+        return;
+    }
+
+    string comando = "05";
+    cliente->enviarMensaje(comando);
+    string respuesta = cliente->recibirMensaje();
+
+    if (respuesta.substr(0, 3) == "OK|") {
+        respuesta = respuesta.substr(3);
+    }
+
+    stringstream ss(respuesta);
+    string fila;
+
+    while (getline(ss, fila, '#')) {
+        if (fila.empty()) continue;
+
+        stringstream ssFila(fila);
+        string idStr, nombre, desc, precioStr, stockStr, marca, categoria;
+
+        getline(ssFila, idStr, ';');
+        getline(ssFila, nombre, ';');
+        getline(ssFila, desc, ';');
+        getline(ssFila, precioStr, ';');
+        getline(ssFila, stockStr, ';');
+        getline(ssFila, marca, ';');
+        getline(ssFila, categoria, ';');
+
+        if (!idStr.empty()) {
+            Producto prod(
+                stoi(idStr),
+                nombre,
+                desc,
+                stod(precioStr),
+                stoi(stockStr),
+                marca,
+                categoria
+            );
+            this->catalogoLocal.push_back(prod);
+        }
+    }
+
+    this->catalogoDescargado = true;
+
+    cout << "\n=== CATALOGO DE PRODUCTOS (Descargado del Servidor) ===" << endl;
+    for (const auto& prod : catalogoLocal) {
+        prod.mostrar();
+    }
 }
