@@ -41,7 +41,6 @@ void menu(sqlite3 *db) {
         fgets(str, 50, stdin);
         clearLines(str, MaxLine);
         sscanf(str, "%c", &opcion);
-        printf("%c\n", opcion);
 
         if (opcion == '1') {
             log_msg(LOG_INFO, "Admin menu: 1 - Importar catalogo");
@@ -61,7 +60,7 @@ void menu(sqlite3 *db) {
 
             if (c == 's' || c == 'S') {
                 printf("Borrando\n");
-                log_msg(LOG_WARN, "Admin menu: 4 - Borrado de BD confirmado por el admin");
+                log_msg(LOG_WARN, "Admin menu: 4 - Borrado de BD confirmed por el admin");
                 borrarBase(db);
             } else {
                 log_msg(LOG_INFO, "Admin menu: 4 - Borrado de BD cancelado");
@@ -109,7 +108,6 @@ void gestionarPedidos(sqlite3 *db) {
         fgets(str, 50, stdin);
         clearLines(str, MaxLine);
         sscanf(str, "%c", &opcion);
-        printf("%c\n", opcion);
 
         if (opcion == '1') {
             log_msg(LOG_INFO, "Pedidos menu: 1 - Visualizar pedidos");
@@ -152,7 +150,6 @@ void gestionarProductos(sqlite3 *db) {
 
         fgets(str, 50, stdin);
         sscanf(str, "%c", &opcion);
-        printf("%c\n", opcion);
 
         if (opcion == '1') {
             log_msg(LOG_INFO, "Productos menu: 1 - Visualizar productos");
@@ -277,7 +274,6 @@ int getUsuarioId(sqlite3 *db) {
     fgets(str, 50, stdin);
     clearLines(str, MaxLine);
     sscanf(str, "%s", username);
-    printf("%s\n", username);
 
     char sql1[] = "select U.id_usuario from USUARIO U where U.nombre = ?";
     sqlite3_prepare_v2(db, sql1, strlen(sql1), &stmt, NULL);
@@ -337,7 +333,6 @@ void actualizarTotal(sqlite3 *db, int idCar, double total) {
         printError(db, 3, "Pedido");
     } else {
         printSucces(1, "Total");
-        printf("Total actualizado\n");
     }
 }
 
@@ -372,6 +367,7 @@ bool comprobarUsuario(sqlite3 *db, char username[MaxLine], char contrasenya[MaxL
             char* userSelect = (char*) sqlite3_column_text(stmt, 0);
             char* contraSelect = (char*) sqlite3_column_text(stmt, 1);
             if (strcmp(userSelect, username) == 0 && strcmp(contraSelect, contrasenya) == 0) {
+                sqlite3_finalize(stmt);
                 return false;
             }
         }
@@ -394,14 +390,12 @@ void iniciarSesion(sqlite3 *db) {
         fgets(str, 50, stdin);
         clearLines(str, MaxLine);
         sscanf(str, "%s", username);
-        printf("%s\n", username);
 
         printf("Introduce tu contrasenya: ");
         fflush(stdout);
         fgets(str, 50, stdin);
         clearLines(str, MaxLine);
         sscanf(str, "%s", contrasenya);
-        printf("%s\n", contrasenya);
 
         permanecer = comprobarUsuario(db, username, contrasenya);
 
@@ -435,14 +429,13 @@ bool registrarAdminDB(sqlite3 *db, char username[MaxLine], char apellido[MaxLine
     char sql1[] = "select U.nombre from USUARIO U where U.rol = ?";
     sqlite3_prepare_v2(db, sql1, strlen(sql1), &stmt, NULL);
     sqlite3_bind_text(stmt, 1, admin, strlen(admin), SQLITE_STATIC);
-    printf("\nMostrando admins: \n");
 
     do {
         result = sqlite3_step(stmt);
         if (result == SQLITE_ROW) {
             char* adminSelect = (char*) sqlite3_column_text(stmt, 0);
-            printf("%s\n", (char*) sqlite3_column_text(stmt, 0));
             if (strcmp(adminSelect, username) == 0) {
+                sqlite3_finalize(stmt);
                 return false;
             }
         }
@@ -452,14 +445,12 @@ bool registrarAdminDB(sqlite3 *db, char username[MaxLine], char apellido[MaxLine
     char sql2[] = "select C.id_ciudad from CIUDAD C where C.nombre = ?";
     sqlite3_prepare_v2(db, sql2, strlen(sql2), &stmt, NULL);
     sqlite3_bind_text(stmt, 1, ciudad, strlen(ciudad), SQLITE_STATIC);
-    printf("\nMostrando id de ciudades: \n");
 
-    int id_ciudad;
+    int id_ciudad = 0;
     do {
         result = sqlite3_step(stmt);
         if (result == SQLITE_ROW) {
             id_ciudad = (int) sqlite3_column_int(stmt, 0);
-            printf("%i\n", id_ciudad);
         }
     } while (result == SQLITE_ROW);
     sqlite3_finalize(stmt);
@@ -480,7 +471,6 @@ bool registrarAdminDB(sqlite3 *db, char username[MaxLine], char apellido[MaxLine
         printError(db, 0, "Admin");
         return false;
     } else {
-        printSucces(2, "Administrador");
         return true;
     }
 }
@@ -507,21 +497,18 @@ void registrarAdmin(sqlite3 *db) {
         fgets(str, 50, stdin);
         clearLines(str, MaxLine);
         sscanf(str, "%s", username);
-        printf("%s\n", username);
 
         printf("Introduce el apellido: ");
         fflush(stdout);
         fgets(str, 50, stdin);
         clearLines(str, MaxLine);
         sscanf(str, "%s", apellido);
-        printf("%s\n", apellido);
 
         printf("Introduce el telefono: ");
         fflush(stdout);
         fgets(str, 50, stdin);
         clearLines(str, MaxLine);
         sscanf(str, "%s", telefonoTxt);
-        printf("%s\n", telefonoTxt);
 
         for (int i = 0; i < strlen(telefonoTxt); i++) {
             char c = telefonoTxt[i];
@@ -554,7 +541,6 @@ void registrarAdmin(sqlite3 *db) {
             fgets(str, 50, stdin);
             clearLines(str, MaxLine);
             sscanf(str, "%s", telefonoTxt);
-            printf("%s\n", telefonoTxt);
 
             for (int i = 0; i < strlen(telefonoTxt); i++) {
                 char c = telefonoTxt[i];
@@ -578,21 +564,18 @@ void registrarAdmin(sqlite3 *db) {
         fgets(str, 50, stdin);
         clearLines(str, MaxLine);
         sscanf(str, "%s", email);
-        printf("%s\n", email);
 
         printf("Introduce tu ciudad: ");
         fflush(stdout);
         fgets(str, 50, stdin);
         clearLines(str, MaxLine);
         sscanf(str, "%s", ciudad);
-        printf("%s\n", ciudad);
 
         printf("Introduce tu contrasenya: ");
         fflush(stdout);
         fgets(str, 50, stdin);
         clearLines(str, MaxLine);
         sscanf(str, "%s", contrasenya);
-        printf("%s\n", contrasenya);
 
         permanecer = registrarAdminDB(db, username, apellido, telefono, email, ciudad, contrasenya);
 
@@ -622,7 +605,6 @@ void inicio(sqlite3 *db) {
         fgets(str, 50, stdin);
         clearLines(str, MaxLine);
         sscanf(str, "%c", &opcion);
-        printf("%c\n", opcion);
 
         if (opcion == '1') {
             log_msg(LOG_INFO, "Gestion Tienda menu: 1 - Iniciar Sesion");

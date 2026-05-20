@@ -19,13 +19,12 @@ bool crearCarrito(sqlite3 *db, int *idCarrito) {
     int id = 0;
     char fecha[MaxLine];
 
-    printf("Bienvenido a la creación del carrito, por favor introduzca los siguientes datos:\n");
+    printf("Bienvenido a la creacion del carrito, por favor introduzca los siguientes datos:\n");
     printf("Introduce el nombre de usuario: ");
     fflush(stdout);
     fgets(str, 50, stdin);
     clearLines(str, MaxLine);
     sscanf(str, "%s", username);
-    printf("%s\n", username);
 
     sqlite3_prepare_v2(db, "SELECT DATE('now');", -1, &stmt, NULL);
     if (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -95,7 +94,6 @@ bool anyadirProductoCarrito(sqlite3 *db, int *idCarrito, double *total) {
     fgets(str, 50, stdin);
     clearLines(str, MaxLine);
     sscanf(str, "%i", &cantidad);
-    printf("%i\n", cantidad);
 
     for (int i = 0; i < cantidad; i++) {
         printf("Introduce el nombre del producto: ");
@@ -104,7 +102,6 @@ bool anyadirProductoCarrito(sqlite3 *db, int *idCarrito, double *total) {
         clearLines(str, MaxLine);
         str[strcspn(str, "\n")] = '\0';
         strncpy(nomProd, str, MaxLine);
-        printf("%s\n", nomProd);
 
         char sql1[] = "select P.id_producto, P.precio from PRODUCTO P where P.nombre = ?";
         sqlite3_prepare_v2(db, sql1, strlen(sql1), &stmt, NULL);
@@ -129,7 +126,6 @@ bool anyadirProductoCarrito(sqlite3 *db, int *idCarrito, double *total) {
             fgets(str, 50, stdin);
             clearLines(str, MaxLine);
             sscanf(str, "%i", &cantidadProd);
-            printf("%i\n", cantidadProd);
 
             precio = cantidadProd * precio;
             tot += precio;
@@ -229,19 +225,19 @@ void anyadirPedidos(sqlite3 *db) {
     int idCarrito = 0;
     double total = 0.0;
 
-    printf("Para añadir un Pedido tendrá que crear un carrito, y añadirle productos\n");
-    printf("Esto es un proceso de 3 partes, se le avisará cuando complete cada una\n");
-    printf("Por seguridad y para evitar redundancia, cada vez que haya un error, habrá que volver a empezar desde el principio\n");
+    printf("Para anyadir un Pedido tendra que crear un carrito, y anyadirle productos\n");
+    printf("Esto es un proceso de 3 partes, se le avisara cuando complete cada una\n");
+    printf("Por seguridad y para evitar redundancia, cada vez que haya un error, habra que volver a empezar desde el principio\n");
 
     while (permanecer) {
         printf("Para empezar, tiene que crear un carrito\n");
         correcto = crearCarrito(db, &idCarrito);
 
         if (correcto) {
-            printf("Fase 1/3 completado. Ahora tiene que añadirle productos al carrito\n");
+            printf("Fase 1/3 completado. Ahora tiene que anyadirle productos al carrito\n");
             correcto = correcto && anyadirProductoCarrito(db, &idCarrito, &total);
         } else {
-            printf("Error en la creación del carrito, regresando\n");
+            printf("Error en la creacion del carrito, regresando\n");
             permanecer = false;
         }
 
@@ -249,8 +245,7 @@ void anyadirPedidos(sqlite3 *db) {
             printf("Fase 2/3 completado. Ahora se creara el pedido\n");
             correcto = correcto && crearPedido(db, &idCarrito, &total);
         } else if (permanecer) {
-            // Entra si falló el carrito en el paso 2
-            printf("Error en la creación de linea-carrito, eliminando carrito\n");
+            printf("Error en la creacion de linea-carrito, eliminando carrito\n");
             permanecer = false;
             eliminarCarrito(db, &idCarrito);
             printf("Regresando\n");
@@ -260,7 +255,6 @@ void anyadirPedidos(sqlite3 *db) {
             printf("Fase 3/3 completado. Pedido listo\n");
             permanecer = continuar();
         } else if (permanecer) {
-            // Entra si falló el pedido en el paso 3
             permanecer = false;
             printf("Error en la cracion del Pedido, eliminando linea-carrito\n");
             eliminarLineaCarrito(db, &idCarrito);
@@ -287,7 +281,6 @@ void eliminarPedidos(sqlite3 *db) {
         fgets(str, 50, stdin);
         clearLines(str, MaxLine);
         sscanf(str, "%i", &idCar);
-        printf("%i\n", idCar);
 
         printf("Desea eliminar el pedido %i?\n", idCar);
         fflush(stdout);
@@ -333,7 +326,6 @@ void cambiarCantidad(sqlite3 *db, int idCar) {
     fgets(str, 50, stdin);
     clearLines(str, MaxLine);
     sscanf(str, "%i", &cantidadProd);
-    printf("%i\n", cantidadProd);
     precioTemp = cantidadProd * precioTemp;
 
     char sql[] = "update LINEA_CARRITO SET cantidad = ? , precio_unitario = ? where id_producto = ? and id_carrito = ?";
@@ -349,7 +341,7 @@ void cambiarCantidad(sqlite3 *db, int idCar) {
     if (result != SQLITE_DONE) {
         printError(db, 3, "Linea-Carrito");
     } else {
-        printSucces(1, "Cantidad");
+        printf("Cantidad actualizada con exito.\n");
         precio = precioTemp;
         getTotal(db, idCar, &precio, &precioAntiguo);
     }
@@ -395,34 +387,37 @@ void modificarPedidos(sqlite3 *db) {
     }
 
     while (permanecer) {
-        printf("Que desea modificar?\n1. Cantidad de un producto\n2. Añadir Producto\n3. Eliminar Producto\n");
+        // Se añade la Opción 4 en el menú para permitir al administrador salir del bucle
+        printf("Que desea modificar?\n1. Cantidad de un producto\n2. Anyadir Producto\n3. Eliminar Producto\n4. Volver al menu de pedidos\n");
         fflush(stdout);
         fgets(str, 50, stdin);
         clearLines(str, MaxLine);
         sscanf(str, "%i", &opcion);
-        printf("%i\n", opcion);
-        visualizarCarrito(db, id);
 
         if (opcion == 1) {
+            visualizarCarrito(db, id);
             printf("Cual desea Modificar?: ");
             fflush(stdout);
             fgets(str, 50, stdin);
             clearLines(str, MaxLine);
             sscanf(str, "%i", &idCar);
-            printf("%i\n", idCar);
             cambiarCantidad(db, idCar);
         } else if (opcion == 2) {
+            visualizarCarrito(db, id);
             anyadirProductoCarrito(db, &idCar, &total);
             permanecer = false;
         } else if (opcion == 3) {
+            visualizarCarrito(db, id);
             printf("Cual desea Eliminar?: ");
             fflush(stdout);
             fgets(str, 50, stdin);
             clearLines(str, MaxLine);
             sscanf(str, "%i", &idCar);
-            printf("%i\n", idCar);
             eliminarProductoCarrito(db, idCar);
             permanecer = false;
+        } else if (opcion == 4) {
+            printf("Regresando...\n");
+            permanecer = false; // Rompe el bucle de manera limpia
         } else {
             printError(db, 6, "Opcion");
         }
@@ -441,7 +436,6 @@ void getProductoCarrito(sqlite3 *db, int *idProd, double *precio, double *precio
     clearLines(str, MaxLine);
     str[strcspn(str, "\n")] = '\0';
     strncpy(nomProd, str, MaxLine);
-    printf("%s\n", nomProd);
 
     char sql1[] = "select P.id_producto, P.precio from PRODUCTO P where P.nombre = ?";
     sqlite3_prepare_v2(db, sql1, strlen(sql1), &stmt, NULL);
