@@ -43,13 +43,13 @@ void printError(sqlite3 *db, int tipoError, char *tabla) {
             printf("Error 3: %s no se pudo actualizar\n", tabla);
             break;
         case 4:
-            printf("Error 4: El usuario o la contraseña está mal escrito\n");
+            printf("Error 4: El usuario o la contrasenya esta mal escrito\n");
             break;
         case 5:
             printf("Error 5: El numero de telefono tiene caracteres incompatibles o es demasiado grande o pequeño\n");
             break;
         case 6:
-            printf("Error 6: La opción %s no es válida\n", tabla);
+            printf("Error 6: La opcion %s no es valida\n", tabla);
             break;
         default:
             break;

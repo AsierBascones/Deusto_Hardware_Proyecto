@@ -50,7 +50,7 @@ void serverOAdmin(sqlite3 *db) {
         printf("\n1. Servidor\n");
         printf("2. Admin\n");
         printf("3. Salir\n");
-        printf("\nOpcion: ");
+        printf("Opcion: ");
         fflush(stdout);
 
         fgets(str, 50, stdin);
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
     inicializar_base_datos(db);
     rellenar_base_datos(db);
 
-    printf("Bienvenido a Deusto Hardware\n");
+    printf("\nBienvenido a Deusto Hardware");
 
     serverOAdmin(db);
 

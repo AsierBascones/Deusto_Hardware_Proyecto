@@ -87,12 +87,12 @@ int cargar_configuracion(const char *ruta_archivo, Configuracion *cfg) {
 }
 
 void mostrar_configuracion(const Configuracion *cfg) {
-    printf("\n=== CONFIGURACIÓN CARGADA ===\n");
+    printf("\n=== CONFIGURACION CARGADA ===\n");
     printf("Admin usuario:      %s\n", cfg->admin_usuario);
-    printf("Admin contraseña:   %s\n", cfg->admin_contrasena);
+    printf("Admin contrasenya:   %s\n", cfg->admin_contrasena);
     printf("Ruta base de datos: %s\n", cfg->bd_ruta);
-    printf("Ruta importación:   %s\n", cfg->ruta_importacion);
-    printf("Ruta exportación:   %s\n", cfg->ruta_exportacion);
+    printf("Ruta importacion:   %s\n", cfg->ruta_importacion);
+    printf("Ruta exportacion:   %s\n", cfg->ruta_exportacion);
     printf("Ruta logs:          %s\n", cfg->log_ruta);
     printf("Nivel log:          %s\n", cfg->log_nivel);
     printf("Log a consola:      %d\n", cfg->log_consola);

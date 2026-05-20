@@ -90,10 +90,10 @@ void gestionarPedidos(sqlite3 *db) {
     while (permanecer) {
         printf("Gestion de Pedidos\n");
         printf("1. Visualizar pedidos\n");
-        printf("2. Añadir pedidos\n");
+        printf("2. Anyadir pedidos\n");
         printf("3. Modificar pedidos\n");
         printf("4. Eliminar pedidos\n");
-        printf("5. salir\n");
+        printf("5. Salir\n");
         printf("Opcion: ");
         fflush(stdout);
 
@@ -128,10 +128,10 @@ void gestionarProductos(sqlite3 *db) {
     while (permanecer) {
         printf("Gestion de Productos\n");
         printf("1. Visualizar productos\n");
-        printf("2. Añadir productos\n");
+        printf("2. Anyadir productos\n");
         printf("3. Modificar productos\n");
         printf("4. Eliminar productos\n");
-        printf("5. salir\n");
+        printf("5. Salir\n");
         printf("Opcion: ");
         fflush(stdout);
 
@@ -488,7 +488,7 @@ void registrarAdmin(sqlite3 *db) {
         sscanf(str, "%s", username);
         printf("%s\n", username);
 
-        printf("introduce el apellido: ");
+        printf("Introduce el apellido: ");
         fflush(stdout);
         fgets(str, 50, stdin);
         clearLines(str, MaxLine);
