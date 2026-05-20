@@ -1,4 +1,5 @@
 #include "SocketClient.h"
+#include "Logger.h"
 #include <iostream>
 
 using namespace std;
@@ -46,6 +47,7 @@ bool SocketClient::conectar() {
 	}
 
 	conectado = true;
+	Logger::msg(Logger::INFO, "Socket conectado a %s:%d", ip.c_str(), puerto);
 	return true;
 }
 
@@ -56,6 +58,7 @@ void SocketClient::desconectar() {
 		closesocket(sock);
 		WSACleanup();
 		conectado = false;
+		Logger::msg(Logger::INFO, "Socket desconectado");
 	}
 }
 
@@ -70,6 +73,7 @@ bool SocketClient::enviarMensaje(const string& mensaje) {
 		cerr << "Error al enviar datos.\n";
 		return false;
 	}
+	Logger::msg(Logger::INFO, "-> servidor: %s", mensaje.c_str());
 	return true;
 }
 
@@ -84,6 +88,7 @@ string SocketClient::recibirMensaje() {
 		return string(buffer);
 	} else if (recibidos == 0) {
 		cout << "El servidor ha cerrado la conexión.\n";
+		Logger::msg(Logger::WARN, "El servidor ha cerrado la conexion");
 		desconectar();
 	} else {
 		cerr << "Error al recibir datos.\n";
