@@ -133,9 +133,53 @@ void MenuUsuario::VerPedidos(SocketClient *cliente) {
     cliente->enviarMensaje(comando + "|" + to_string(this->idUsuarioLogueado));
     respuesta = cliente->recibirMensaje();
 
-    cout << "---------------------------------------------" << endl;
-    cout << respuesta << endl;
-    cout << "---------------------------------------------" << endl;
+    cout << "\n=============================================" << endl;
+    cout << "           HISTORIAL DE PEDIDOS              " << endl;
+    cout << "=============================================" << endl;
+
+    // Si el servidor devuelve un error o no tiene pedidos
+    if (respuesta.substr(0, 3) == "ERR" || respuesta.empty()) {
+        cout << "   No se encontraron pedidos en tu cuenta." << endl;
+        cout << "=============================================" << endl;
+        return;
+    }
+
+    // Quitamos el "OK|" del principio para quedarnos solo con los datos
+    if (respuesta.substr(0, 3) == "OK|") {
+        respuesta = respuesta.substr(3);
+    }
+
+    stringstream ss(respuesta);
+    string fila;
+    bool tienePedidos = false;
+
+    // Troceamos por '#' si el usuario tuviera varios pedidos realizados
+    while (getline(ss, fila, '#')) {
+        if (fila.empty()) continue;
+
+        stringstream ssFila(fila);
+        string idPed, fecha, estado, totalStr;
+
+        // Troceamos cada campo del pedido por ';'
+        getline(ssFila, idPed, ';');
+        getline(ssFila, fecha, ';');
+        getline(ssFila, estado, ';');
+        getline(ssFila, totalStr, ';');
+
+        if (!idPed.empty()) {
+            tienePedidos = true;
+            cout << " Pedido ID:  #" << idPed << endl;
+            cout << " Fecha:      " << fecha << endl;
+            cout << " Estado:     " << estado << endl;
+            cout << " Total:      " << totalStr << " EUR" << endl;
+            cout << "---------------------------------------------" << endl;
+        }
+    }
+
+    if (!tienePedidos) {
+        cout << "No se encontraron pedidos en tu cuenta." << endl;
+    }
+    cout << "=============================================" << endl;
 }
 
 void MenuUsuario::ConfirmarCompra(SocketClient *cliente) {
