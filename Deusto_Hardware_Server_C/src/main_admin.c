@@ -11,6 +11,7 @@
 #include "printer.h"
 #include "gestionarPedidos.h"
 #include "gestionarProductos.h"
+#include "logger.h"
 
 #define MaxLine 50
 
@@ -73,10 +74,12 @@ void menu(sqlite3 *db) {
 
 void importarFichero(sqlite3 *db) {
     printf("Importando desde: %s\n", config.ruta_importacion);
+    log_msg(LOG_INFO, "Operacion IMPORTAR iniciada desde '%s'", config.ruta_importacion);
 }
 
 void exportarFichero(sqlite3 *db) {
     printf("Exportando a: %s\n", config.ruta_exportacion);
+    log_msg(LOG_INFO, "Operacion EXPORTAR iniciada hacia '%s'", config.ruta_exportacion);
 }
 
 void gestionarPedidos(sqlite3 *db) {
@@ -383,16 +386,19 @@ void iniciarSesion(sqlite3 *db) {
 
         if (permanecer && cantidad < 3) {
             printError(db, 4, "");
+            log_msg(LOG_WARN, "Login admin local fallido (usuario='%s', intento %d/3)", username, cantidad + 1);
             cantidad++;
         }
 
         if (!permanecer) {
             printf("Bienvenido %s\n", username);
+            log_msg(LOG_INFO, "Login admin local correcto (usuario='%s')", username);
             menu(db);
         }
 
         if (cantidad == 3) {
             printf("Cantidad maxima de oportunidades alcanzado. Regresando\n");
+            log_msg(LOG_WARN, "Login admin local bloqueado tras 3 intentos fallidos (ultimo usuario='%s')", username);
             permanecer = false;
             cantidad = 0;
             inicio(db);

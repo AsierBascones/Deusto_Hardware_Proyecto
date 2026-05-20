@@ -11,6 +11,8 @@ typedef struct {
 	char ruta_importacion[MAX_RUTA];
 	char ruta_exportacion[MAX_RUTA];
 	char log_ruta[MAX_RUTA];
+	char log_nivel[MAX_VALOR];
+	int  log_consola;
 } Configuracion;
 
 int cargar_configuracion(const char *ruta_archivo, Configuracion *cfg);

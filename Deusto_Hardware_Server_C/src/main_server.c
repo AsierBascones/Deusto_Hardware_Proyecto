@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <winsock2.h> // LIBRERÍA DE RED AÑADIDA
+#include <winsock2.h> //LIBRERIA DE RED AÑADIDA
 #include "sqlite3.h"
 #include "main_server.h"
+#include "logger.h"
 
 #define MAX_CAMPOS 20
 #define TAM_CAMPO 256
@@ -20,6 +21,7 @@ static void responder(char *respuesta, int tamRespuesta, const char *estado, con
 
 static void responder_bd_error(sqlite3 *db, char *respuesta, int tamRespuesta) {
     snprintf(respuesta, tamRespuesta, "ERR|Error de base de datos: %s", sqlite3_errmsg(db));
+    log_msg(LOG_ERROR, "Error SQL: %s", sqlite3_errmsg(db));
 }
 
 static int separar_campos(const char *peticion, char campos[MAX_CAMPOS][TAM_CAMPO]) {
@@ -129,8 +131,12 @@ static void comando_login(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAMPO], int n
         snprintf(respuesta, tamRespuesta, "OK|Login correcto|%s|%d",
                  rol ? (const char *)rol : "CLIENTE",
                  idUsuario);
+        if (rol && strcmp((const char *)rol, "ADMIN") == 0) {
+            log_msg(LOG_INFO, "Login ADMIN correcto (email=%s, id=%d)", campos[1], idUsuario);
+        }
     } else {
         responder(respuesta, tamRespuesta, "ERR", "Usuario o contrasena incorrectos");
+        log_msg(LOG_WARN, "Intento de login fallido (email=%s)", campos[1]);
     }
 
     sqlite3_finalize(stmt);
@@ -157,6 +163,7 @@ static void comando_registrar_admin(sqlite3 *db, char campos[MAX_CAMPOS][TAM_CAM
 
     if (sqlite3_step(stmt) == SQLITE_DONE) {
         responder(respuesta, tamRespuesta, "OK", "Administrador registrado correctamente");
+        log_msg(LOG_INFO, "Nuevo administrador registrado (email=%s)", campos[3]);
     } else {
         responder(respuesta, tamRespuesta, "ERR", "No se pudo registrar el administrador");
     }
@@ -672,6 +679,7 @@ int procesarPeticion(sqlite3 *db, const char *peticion, char *respuesta, int tam
 
     if (db == NULL) {
         responder(respuesta, tamRespuesta, "ERR", "Base de datos no abierta");
+        log_msg(LOG_ERROR, "Peticion recibida pero la BD no esta abierta");
         return 0;
     }
 
@@ -724,61 +732,69 @@ int server(sqlite3 *db) {
     char respuesta[MAX_RESPUESTA];
 
     printf("\n=== SERVIDOR INICIANDO ===\n");
+    log_msg(LOG_INFO, "Modo SERVIDOR TCP iniciado");
 
-    // 1. Inicializar Winsock
+    /* 1. Inicializar Winsock */
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
-        printf("Error: No se pudo inicializar Winsock. Codigo: %d\n", WSAGetLastError());
+        int err = WSAGetLastError();
+        printf("Error: No se pudo inicializar Winsock. Codigo: %d\n", err);
+        log_msg(LOG_ERROR, "Fallo WSAStartup (codigo=%d)", err);
         return 1;
     }
 
-    // 2. Crear el socket principal del servidor
+    /* 2. Crear el socket principal del servidor */
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
-        printf("Error: No se pudo crear el socket. Codigo: %d\n", WSAGetLastError());
+        int err = WSAGetLastError();
+        printf("Error: No se pudo crear el socket. Codigo: %d\n", err);
+        log_msg(LOG_ERROR, "No se pudo crear el socket (codigo=%d)", err);
         WSACleanup();
         return 1;
     }
 
-    // 3. Configurar la direccion y el puerto (8080)
+    /* 3. Configurar la direccion y el puerto (8080) */
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY; // Escucha en todas las interfaces de red locales
+    server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(8080);
 
-    // 4. Bind: Vincular el socket al puerto
+    /* 4. Bind */
     if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
-        printf("Error en Bind. El puerto 8080 podria estar en uso. Codigo: %d\n", WSAGetLastError());
+        int err = WSAGetLastError();
+        printf("Error en Bind. El puerto 8080 podria estar en uso. Codigo: %d\n", err);
+        log_msg(LOG_ERROR, "Fallo bind en puerto 8080 (codigo=%d)", err);
         closesocket(server_fd);
         WSACleanup();
         return 1;
     }
 
-    // 5. Listen: Poner el servidor en modo escucha
-    listen(server_fd, 3); // Permite hasta 3 conexiones en espera
+    /* 5. Listen */
+    listen(server_fd, 3);
     printf("[*] Servidor escuchando en el puerto 8080...\n");
+    log_msg(LOG_INFO, "Servidor escuchando en el puerto 8080");
 
     addr_len = sizeof(struct sockaddr_in);
 
-    // Bucle infinito: el servidor nunca se apaga, siempre espera clientes
     while (1) {
         printf("[*] Esperando a que un cliente se conecte...\n");
 
-        // 6. Accept: El programa se bloquea aqui hasta que un cliente llama
         cliente_fd = accept(server_fd, (struct sockaddr *)&cliente_addr, &addr_len);
         if (cliente_fd == INVALID_SOCKET) {
+            int err = WSAGetLastError();
             printf("Error al aceptar la conexion del cliente.\n");
-            continue; // Si falla uno, seguimos esperando al siguiente
+            log_msg(LOG_ERROR, "Fallo accept (codigo=%d)", err);
+            continue;
         }
 
         printf("[+] Cliente conectado con exito!\n");
 
-        // Bucle de comunicacion con este cliente en concreto
         while (1) {
-            memset(peticion, 0, MAX_PETICION); // Limpiar la memoria antes de leer
+            memset(peticion, 0, MAX_PETICION);
 
-            // 7. Recibir datos del cliente
             int recibidos = recv(cliente_fd, peticion, MAX_PETICION - 1, 0);
 
             if (recibidos == SOCKET_ERROR) {
+                int err = WSAGetLastError();
                 printf("[-] Error al recibir datos o cliente desconectado bruscamente.\n");
+                log_msg(LOG_WARN, "Cliente desconectado bruscamente (codigo=%d)", err);
                 break;
             } else if (recibidos == 0) {
                 printf("[-] El cliente ha cerrado la conexion de forma segura.\n");
@@ -788,26 +804,23 @@ int server(sqlite3 *db) {
             quitar_salto_linea(peticion);
             printf("Cliente -> Servidor: %s\n", peticion);
 
-            // Procesar la trama
             procesarPeticion(db, peticion, respuesta, sizeof(respuesta));
 
             printf("Servidor -> Cliente: %s\n", respuesta);
 
-            // 8. Enviar la respuesta de vuelta al cliente
             send(cliente_fd, respuesta, strlen(respuesta), 0);
 
-            // Si el cliente pide desconectarse (comando "00"), rompemos el bucle
             if (strcmp(peticion, "00") == 0) {
                 break;
             }
         }
 
-        // 9. Cerramos la linea con este cliente y volvemos a esperar a otro
         closesocket(cliente_fd);
         printf("[*] Conexion cerrada con este cliente. Volviendo a escuchar...\n\n");
     }
 
     closesocket(server_fd);
     WSACleanup();
+    log_msg(LOG_INFO, "Modo SERVIDOR TCP detenido");
     return 0;
 }

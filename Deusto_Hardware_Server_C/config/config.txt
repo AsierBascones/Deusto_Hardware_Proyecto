@@ -5,4 +5,9 @@ BD_RUTA = data/deusto_hardware.sqlite
 
 RUTA_IMPORTACION = data/importar/
 RUTA_EXPORTACION = data/exportar/
+
 LOG_RUTA = logs/servidor.log
+# LOG_NIVEL: INFO | WARN | ERROR (nivel minimo que se escribira en el log)
+LOG_NIVEL = INFO
+# LOG_CONSOLA: 1 para imprimir tambien por pantalla, 0 para solo a fichero
+LOG_CONSOLA = 1

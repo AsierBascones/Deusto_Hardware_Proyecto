@@ -10,6 +10,7 @@
 #include "config.h"
 #include "db_manager.h"
 #include "sqlite3.h"
+#include "logger.h"
 
 #define MaxLine 50
 #define SQLITE_CHECKPOINT_TRUNCATE 3
@@ -34,6 +35,9 @@ void borrarBase(sqlite3* db) {
 
     if (remove(config.bd_ruta) != 0) {
         perror("Error eliminando BD");
+        log_msg(LOG_ERROR, "No se pudo eliminar el fichero de BD '%s'", config.bd_ruta);
+    } else {
+    	log_msg(LOG_WARN, "Base de datos eliminada por peticion del admin (%s)", config.bd_ruta);
     }
 }
 
@@ -59,7 +63,9 @@ void serverOAdmin(sqlite3 *db) {
         } else if (opcion == '2') {
             inicio(db);
         } else if (opcion == '3') {
+        	log_msg(LOG_INFO, "Servidor cerrado por el operador desde el menu principal");
             sqlite3_close(db);
+            log_close();
             exit(0);
         } else {
             printf("Opcion no valida\n");
@@ -69,22 +75,37 @@ void serverOAdmin(sqlite3 *db) {
 
 int main(int argc, char **argv) {
     sqlite3 *db;
+    int config_ok;
 
-    if (cargar_configuracion("config/config.txt", &config) == 0) {
-        printf("Configuración cargada correctamente.\n");
-        mostrar_configuracion(&config);
-    } else {
-        printf("ADVERTENCIA: Usando configuración por defecto.\n");
+    config_ok = cargar_configuracion("config/config.txt", &config);
+
+    if (log_init(config.log_ruta,
+                 log_nivel_desde_texto(config.log_nivel),
+                 config.log_consola) != 0) {
+        fprintf(stderr, "AVISO: El log se escribira solo por consola (no se pudo abrir %s)\n",
+                config.log_ruta);
     }
 
+    if (config_ok == 0) {
+        log_msg(LOG_INFO, "Configuracion cargada desde config/config.txt");
+        printf("Configuracion cargada correctamente.\n");
+        mostrar_configuracion(&config);
+    } else {
+        log_msg(LOG_WARN, "No se pudo cargar config/config.txt, se usan valores por defecto");
+        printf("ADVERTENCIA: Usando configuracion por defecto.\n");
+    }
+
+    log_msg(LOG_INFO, "Arrancando el servidor de Deusto Hardware");
     printf("Arrancando el servidor de Deusto Hardware...\n");
 
-    // Esto abre o crea el fichero de la BD
     printf("Usando base de datos: %s\n", config.bd_ruta);
     int resultado = sqlite3_open(config.bd_ruta, &db);
 
     if (resultado != SQLITE_OK) {
+        log_msg(LOG_ERROR, "Error fatal al abrir la BD '%s': %s",
+                config.bd_ruta, sqlite3_errmsg(db));
         printf("Error fatal al abrir la base de datos: %s\n", sqlite3_errmsg(db));
+        log_close();
         return resultado;
     }
 
@@ -95,5 +116,6 @@ int main(int argc, char **argv) {
 
     serverOAdmin(db);
 
+    log_close();
     return 0;
 }
