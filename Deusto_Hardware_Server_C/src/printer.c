@@ -24,7 +24,7 @@ void printProveedor(int idProv, char nombre[MaxLine], char telefono[MaxLine], ch
            idProv, nombre, telefono, email, direccion, idCid);
 }
 
-void printError(sqlite3 *db, int tipoError, char tabla[MaxLine]) {
+void printError(sqlite3 *db, int tipoError, char *tabla) {
     if (strcmp(sqlite3_errmsg(db), "not an error") != 0) {
         printf("%s\n", sqlite3_errmsg(db));
     }
@@ -56,7 +56,7 @@ void printError(sqlite3 *db, int tipoError, char tabla[MaxLine]) {
     }
 }
 
-void printSucces(int tipoExito, char tabla[MaxLine]) {
+void printSucces(int tipoExito, char* tabla) {
     switch (tipoExito) {
         case 0:
             printf("%s eliminado\n", tabla);

@@ -46,7 +46,7 @@ void serverOAdmin(sqlite3 *db) {
         printf("\n1. Servidor\n");
         printf("2. Admin\n");
         printf("3. Salir\n");
-        printf("Opcion: ");
+        printf("\nOpcion: ");
         fflush(stdout);
 
         fgets(str, 50, stdin);
